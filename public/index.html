@@ -1,0 +1,134 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>メタバース プロトタイプ</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px;
+            font-family: sans-serif;
+        }
+    </style>
+    <!-- Three.js と Socket.io をCDNから読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <div id="info">操作方法: [W][A][S][D] キーで移動</div>
+
+    <script>
+        const socket = io();
+        let scene, camera, renderer;
+        let myId = null;
+        const playerMeshes = {};
+        const keys = {};
+
+        // 1. 3D空間（シーン・カメラ・レンダラー）の初期化
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x202030);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 8);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // 床（地面）の追加
+            const gridHelper = new THREE.GridHelper(20, 20);
+            scene.add(gridHelper);
+
+            // ライト（照明）の追加
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 10, 7);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x404040));
+
+            // キーボード入力の監視
+            window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+            window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+            animate();
+        }
+
+        // 2. プレイヤー（立方体）の生成
+        function createPlayerMesh(color = 0x00ff00) {
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshLambertMaterial({ color: color });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.y = 0.5;
+            scene.add(mesh);
+            return mesh;
+        }
+
+        // 3. 通信処理 (Socket.io イベント)
+        socket.on('connect', () => { myId = socket.id; });
+
+        socket.on('currentPlayers', (players) => {
+            Object.keys(players).forEach((id) => {
+                if (!playerMeshes[id]) {
+                    const isMe = (id === myId);
+                    playerMeshes[id] = createPlayerMesh(isMe ? 0x00ff00 : 0xff0000); // 自分の色は緑、他人は赤
+                }
+                playerMeshes[id].position.x = players[id].x;
+                playerMeshes[id].position.z = players[id].z;
+            });
+        });
+
+        socket.on('playerMoved', (data) => {
+            if (playerMeshes[data.id]) {
+                playerMeshes[data.id].position.x = data.x;
+                playerMeshes[data.id].position.z = data.z;
+            }
+        });
+
+        socket.on('playerDisconnected', (id) => {
+            if (playerMeshes[id]) {
+                scene.remove(playerMeshes[id]);
+                delete playerMeshes[id];
+            }
+        });
+
+        // 4. アニメーション＆自分の移動処理（フレーム毎実行）
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (myId && playerMeshes[myId]) {
+                let moved = false;
+                const myMesh = playerMeshes[myId];
+                const speed = 0.1;
+
+                if (keys['w']) { myMesh.position.z -= speed; moved = true; }
+                if (keys['s']) { myMesh.position.z += speed; moved = true; }
+                if (keys['a']) { myMesh.position.x -= speed; moved = true; }
+                if (keys['d']) { myMesh.position.x += speed; moved = true; }
+
+                if (moved) {
+                    // 移動したらサーバーへ送信
+                    socket.emit('playerMovement', { x: myMesh.position.x, z: myMesh.position.z });
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
