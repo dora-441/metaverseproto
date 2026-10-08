@@ -35,6 +35,9 @@ io.on('connection', (socket) => {
     });
 });
 
-http.listen(3000, () => {
-    console.log('サーバーが起動しました: http://localhost:3000');
+//Renderが割り当てるポート番号（process.env.PORT）を使うように変更
+const PORT = process.env.PORT || 3000;
+
+http.listen(PORT, '0.0.0.0', () => {
+   console.log(`サーバーが起動しました: http://localhost:${PORT}`);
 });

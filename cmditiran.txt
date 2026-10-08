@@ -1,0 +1,13 @@
+
+#server
+	node .\server.js	サーバー起動
+			#サーバーを閉じるときはCtrl+Cで
+
+git
+	git add .		gitにそのフォルダを全部追加
+	git add .~		~のファイルを追加
+	git commit -m ""	gitへコミットする
+				””に変更内容を書く
+	git push		gitにプッシュする
+	git push -c *		gitに初めてプッシュする時に書く
+
