@@ -21,6 +21,7 @@
   "homepage": "https://github.com/dora-441/metaverseproto#readme",
   "dependencies": {
     "express": "^5.2.1",
+    "socket.io": "^4.8.4",
     "sqlite3": "^6.0.1"
   }
 }
