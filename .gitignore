@@ -1,0 +1,31 @@
+# OS固有の自動生成ファイル
+.DS_Store
+Thumbs.db
+
+# 環境変数・パスワード・APIキー（絶対にGitに上げてはいけない）
+.env
+.env.local
+*.pem
+
+# エディタ・IDEの設定ファイル
+.vscode/
+.idea/
+
+#Node.js / Web開発
+
+node_modules/
+npm-debug.log*
+dist/
+.next/
+
+Unity / メタバース開発(使わないと思うが一応)
+[L|l]ibrary/
+[T|t]emp/
+[O|o]bj/
+[B|b]uild/
+[B|b]uilds/
+[L|l]ogs/
+[M|m]emoryCaptures/
+*.csproj
+*.unityproj
+*.sln
